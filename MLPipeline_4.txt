@@ -1,0 +1,169 @@
+# import libraries
+import nltk
+import re
+nltk.download('stopwords')
+nltk.download('wordnet') # download for lemmatization
+from nltk.corpus import stopwords
+from nltk.stem.wordnet import WordNetLemmatizer
+from sqlalchemy import create_engine
+import pandas as pd
+from itertools import chain
+
+from sklearn.datasets import make_multilabel_classification
+from sklearn.multioutput import MultiOutputClassifier
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.pipeline import Pipeline
+from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+
+
+# load data from database
+engine = create_engine('sqlite:///Anand_ETL_Pipeline_16022020.db')
+df = pd.read_sql_table('Cyclone',engine)
+X = df.message.values
+y = df[['related',  'request',  'offer',  'aid_related',  'medical_help',  'medical_products',  'search_and_rescue',  'security', 'military',  'child_alone',  'water',  'food',  'shelter',  'clothing',  'money',  'missing_people',  'refugees',  'death',  'other_aid',  'infrastructure_related',  'transport',  'buildings',  'electricity',  'tools',  'hospitals',  'shops',  'aid_centers',  'other_infrastructure',  'weather_related',  'floods',  'storm',  'fire',  'earthquake',  'cold',  'other_weather',  'direct_report']].values
+
+
+
+def tokenize(text):
+    
+    # Normalize text and Tokenize text
+    words = re.sub(r"[^a-zA-Z0-9]", " ", text.lower()).split()
+
+    # Remove stop words
+    words = [w for w in words if w not in stopwords.words("english")]
+    #print(words)
+
+    # Reduce words to their root form
+    lemmed_before = [WordNetLemmatizer().lemmatize(w) for w in words]
+    #print(lemmed_before)
+
+    # Lemmatize verbs by specifying pos
+    lemmed_after = [WordNetLemmatizer().lemmatize(w, pos='v') for w in lemmed_before]
+    #print(lemmed_after)
+    
+    return lemmed_after
+
+
+token = lambda x: tokenize(x)
+
+
+X = [token(df.message[x]) for x in range(len(df['message']))]
+
+
+
+
+# build pipeline
+pipeline = Pipeline([
+    ('vect', CountVectorizer(tokenizer=token)),
+    ('tfidf', TfidfTransformer()),
+    ('clf', MultiOutputClassifier(KNeighborsClassifier()))
+])
+
+
+
+
+
+#Spliting into Training and Test data sets
+X_train, X_test, y_train, y_test = train_test_split(X, y)
+
+# train classifier
+pipeline.fit(X_train,y_train)
+
+
+
+
+import pandas
+from sklearn import model_selection
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import classification_report
+
+X = [token(df.message[x]) for x in range(len(df['message']))]
+
+y = df[['related',  'request',  'offer',  'aid_related',  'medical_help',  'medical_products',  'search_and_rescue',  'security', 'military',  'child_alone',  'water',  'food',  'shelter',  'clothing',  'money',  'missing_people',  'refugees',  'death',  'other_aid',  'infrastructure_related',  'transport',  'buildings',  'electricity',  'tools',  'hospitals',  'shops',  'aid_centers',  'other_infrastructure',  'weather_related',  'floods',  'storm',  'fire',  'earthquake',  'cold',  'other_weather',  'direct_report']].values
+
+test_size = 0.33
+seed = 7
+X_train, X_test, Y_train, Y_test = model_selection.train_test_split(X, y, test_size=test_size, random_state=seed)
+model = LogisticRegression()
+model.fit(X_train, Y_train)
+predicted = model.predict(X_test)
+report = classification_report(Y_test, predicted)
+print(report)
+
+
+
+
+#improve the model with grid search
+pipeline = Pipeline([('scaler', StandardScaler()),('clf', SVC())])
+
+parameters = {
+    'scaler__with_mean': [True, False],
+    'clf__kernel': ['linear', 'rbf'],
+    'clf__C':[1, 10]
+}
+
+cv = GridSearchCV(pipeline, param_grid=parameters)
+
+cv.fit(X_train, y_train)
+y_pred = cv.predict(X_test)
+
+
+
+### Test your model
+
+from sklearn.preprocessing import label_binarize
+
+# Use label_binarize to be multi-label like settings
+Y = label_binarize(y, classes=[0, 1, 2])
+n_classes = Y.shape[1]
+
+# Split into training and test
+X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=.5,
+                                                    random_state=random_state)
+
+# We use OneVsRestClassifier for multi-label prediction
+from sklearn.multiclass import OneVsRestClassifier
+
+# Run classifier
+classifier = OneVsRestClassifier(svm.LinearSVC(random_state=random_state))
+classifier.fit(X_train, Y_train)
+y_score = classifier.decision_function(X_test)
+
+
+from sklearn.metrics import precision_recall_curve
+from sklearn.metrics import average_precision_score
+
+# For each class
+precision = dict()
+recall = dict()
+average_precision = dict()
+for i in range(n_classes):
+    precision[i], recall[i], _ = precision_recall_curve(Y_test[:, i],
+                                                        y_score[:, i])
+    average_precision[i] = average_precision_score(Y_test[:, i], y_score[:, i])
+
+# A "micro-average": quantifying score on all classes jointly
+precision["micro"], recall["micro"], _ = precision_recall_curve(Y_test.ravel(),
+    y_score.ravel())
+average_precision["micro"] = average_precision_score(Y_test, y_score,
+                                                     average="micro")
+print('Average precision score, micro-averaged over all classes: {0:0.2f}'
+      .format(average_precision["micro"]))
+
+
+
+### Export your model as a pickle file
+import pickle
+
+# save the model to disk
+filename = 'finalized_model.sav'
+pickle.dump(model, open(filename, 'wb'))
+ 
+# some time later...
+ 
+# load the model from disk
+loaded_model = pickle.load(open(filename, 'rb'))
+result = loaded_model.score(X_test, Y_test)
+print(result)
