@@ -1,0 +1,34 @@
+Area Under ROC Curve (or ROC AUC for short) is a performance metric for binary classification problems.
+
+The AUC represents a model’s ability to discriminate between positive and negative classes. An area of 1.0 represents a model that made all predictions perfectly. An area of 0.5 represents a model as good as random.
+
+A ROC Curve is a plot of the true positive rate and the false positive rate for a given set of probability predictions at different thresholds used to map the probabilities to class labels. The area under the curve is then the approximate integral under the ROC Curve.
+
+For more on ROC Curves and ROC AUC, see the tutorial:
+
+How to Use ROC Curves and Precision-Recall Curves for Classification in Python
+The example below provides a demonstration of calculating AUC.
+
+
+
+# Cross Validation Classification ROC AUC
+import pandas
+from sklearn import model_selection
+from sklearn.linear_model import LogisticRegression
+url = "https://raw.githubusercontent.com/jbrownlee/Datasets/master/pima-indians-diabetes.data.csv"
+names = ['preg', 'plas', 'pres', 'skin', 'test', 'mass', 'pedi', 'age', 'class']
+dataframe = pandas.read_csv(url, names=names)
+array = dataframe.values
+X = array[:,0:8]
+Y = array[:,8]
+seed = 7
+kfold = model_selection.KFold(n_splits=10, random_state=seed)
+model = LogisticRegression()
+scoring = 'roc_auc'
+results = model_selection.cross_val_score(model, X, Y, cv=kfold, scoring=scoring)
+print("AUC: %.3f (%.3f)") % (results.mean(), results.std())
+
+
+You can see the the AUC is relatively close to 1 and greater than 0.5, suggesting some skill in the predictions.
+
+AUC: 0.824 (0.041)

@@ -1,0 +1,20 @@
+import pandas
+from sklearn import model_selection
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import classification_report
+
+X = [token(df.message[x]) for x in range(len(df['message']))]
+
+y = df[['related',  'request',  'offer',  'aid_related',  'medical_help',  'medical_products',  'search_and_rescue',  'security', 'military',  'child_alone',  'water',  'food',  'shelter',  'clothing',  'money',  'missing_people',  'refugees',  'death',  'other_aid',  'infrastructure_related',  'transport',  'buildings',  'electricity',  'tools',  'hospitals',  'shops',  'aid_centers',  'other_infrastructure',  'weather_related',  'floods',  'storm',  'fire',  'earthquake',  'cold',  'other_weather',  'direct_report']].values
+
+test_size = 0.33
+seed = 7
+X_train, X_test, Y_train, Y_test = model_selection.train_test_split(X, y, test_size=test_size, random_state=seed)
+model = LogisticRegression()
+model.fit(X_train, Y_train)
+predicted = model.predict(X_test)
+report = classification_report(Y_test, predicted)
+print(report)
+
+error:
+ValueError: setting an array element with a sequence.

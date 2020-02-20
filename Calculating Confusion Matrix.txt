@@ -1,0 +1,35 @@
+The confusion matrix is a handy presentation of the accuracy of a model with two or more classes.
+
+The table presents predictions on the x-axis and accuracy outcomes on the y-axis. The cells of the table are the number of predictions made by a machine learning algorithm.
+
+For example, a machine learning algorithm can predict 0 or 1 and each prediction may actually have been a 0 or 1. Predictions for 0 that were actually 0 appear in the cell for prediction=0 and actual=0, whereas predictions for 0 that were actually 1 appear in the cell for prediction = 0 and actual=1. And so on.
+
+For more on the confusion matrix, see this tutorial:
+
+What is a Confusion Matrix in Machine Learning
+Below is an example of calculating a confusion matrix for a set of prediction by a model on a test set.
+
+# Cross Validation Classification Confusion Matrix
+import pandas
+from sklearn import model_selection
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import confusion_matrix
+url = "https://raw.githubusercontent.com/jbrownlee/Datasets/master/pima-indians-diabetes.data.csv"
+names = ['preg', 'plas', 'pres', 'skin', 'test', 'mass', 'pedi', 'age', 'class']
+dataframe = pandas.read_csv(url, names=names)
+array = dataframe.values
+X = array[:,0:8]
+Y = array[:,8]
+test_size = 0.33
+seed = 7
+X_train, X_test, Y_train, Y_test = model_selection.train_test_split(X, Y, test_size=test_size, random_state=seed)
+model = LogisticRegression()
+model.fit(X_train, Y_train)
+predicted = model.predict(X_test)
+matrix = confusion_matrix(Y_test, predicted)
+print(matrix)
+
+Although the array is printed without headings, you can see that the majority of the predictions fall on the diagonal line of the matrix (which are correct predictions).
+
+[[141  21]
+ [ 41  51]]

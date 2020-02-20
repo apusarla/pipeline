@@ -1,0 +1,36 @@
+Logistic loss (or log loss) is a performance metric for evaluating the predictions of probabilities of membership to a given class.
+
+The scalar probability between 0 and 1 can be seen as a measure of confidence for a prediction by an algorithm. Predictions that are correct or incorrect are rewarded or punished proportionally to the confidence of the prediction.
+
+For more on log loss and it’s relationship to cross-entropy, see the tutorial:
+
+A Gentle Introduction to Cross-Entropy for Machine Learning
+Below is an example of calculating log loss for Logistic regression predictions on the Pima Indians onset of diabetes dataset
+
+
+
+
+# Cross Validation Classification LogLoss
+import pandas
+from sklearn import model_selection
+from sklearn.linear_model import LogisticRegression
+url = "https://raw.githubusercontent.com/jbrownlee/Datasets/master/pima-indians-diabetes.data.csv"
+names = ['preg', 'plas', 'pres', 'skin', 'test', 'mass', 'pedi', 'age', 'class']
+dataframe = pandas.read_csv(url, names=names)
+array = dataframe.values
+X = array[:,0:8]
+Y = array[:,8]
+seed = 7
+kfold = model_selection.KFold(n_splits=10, random_state=seed)
+model = LogisticRegression()
+scoring = 'neg_log_loss'
+results = model_selection.cross_val_score(model, X, Y, cv=kfold, scoring=scoring)
+print("Logloss: %.3f (%.3f)") % (results.mean(), results.std())
+
+
+
+Smaller log loss is better with 0 representing a perfect log loss. As mentioned above, the measure is inverted to be ascending when using the cross_val_score() function.
+
+
+Logloss: -0.493 (0.047)
+
